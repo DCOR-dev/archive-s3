@@ -14,3 +14,8 @@ Create a Python environment and install the requirements::
 Create configuration files from the template and run the script::
 
     python archive-s3.py
+
+After an initial sync, you can create a cron job using `crontab -e`::
+
+    # run archiving script every six hours
+    * */6 * * * ~/repos/archive-s3/archive-s3.sh >> /dev/null 2>&1

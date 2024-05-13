@@ -1,7 +1,10 @@
+import atexit
 import pathlib
 import re
+import time
 
 import boto3
+import psutil
 
 
 def download_resource(bucket_name, object_name, output_path, s3_client):
@@ -32,6 +35,34 @@ def get_config(path):
             key, value = line.split("=", 1)
             config[key.strip()] = value.strip()
     return config
+
+
+def get_lock():
+    lock_file = pathlib.Path(__file__).with_suffix(".lock")
+    # Prevent this script from being run twice
+    if lock_file.exists():
+        # Check the date of the lock file
+        if time.time() - lock_file.stat().st_ctime > 7200:
+            # Check whether there are other processes running
+            proc_ident = "archive-s3"
+            count = 0
+            for pc in psutil.process_iter():
+                count += "".join(pc.cmdline()).count(proc_ident)
+            if count > 1:
+                # Another process is still running
+                print(f"Other process is using {lock_file}, exiting!")
+                return
+        else:
+            print(f"Lock file {lock_file} exists, exiting!")
+            return
+        # If we got here, that means that the lock file is too old and no other
+        # process is currently running.
+        pass
+
+    # Register lock file
+    lock_file.touch()
+    atexit.register(lock_file.unlink, missing_ok=True)
+    return True
 
 
 def get_s3_client(config):
@@ -119,7 +150,8 @@ def run_archive(pc):
 
 
 if __name__ == "__main__":
-    # get configuration files
-    here = pathlib.Path(__file__).parent
-    for pc in (here / "conf.d").glob("*.conf"):
-        run_archive(pc)
+    if get_lock():
+        # get configuration files
+        here = pathlib.Path(__file__).parent
+        for pc in (here / "conf.d").glob("*.conf"):
+            run_archive(pc)
