@@ -1,0 +1,26 @@
+# Copy this template and rename it to a file with the suffix ".conf"
+# (not tracked by git) to enable a new archiving job.
+
+# Name of the thing being archived
+name = DCOR example
+# Description
+description = DCOR server used for serving example data
+
+# S3 credentials
+s3_endpoint_url = https://objectstore.hpccloud.mpcdf.mpg.de
+s3_access_key_id = dn1938dao9sw8dzpkl1902d8j1p9028ed12e
+s3_secret_access_key = asibksudzbqiwudzgi26di1726dgi76gvka78u6d
+
+# Regular expression describing which objects should be backed up
+regexp_bucket = ^circle-.*$
+# only archive objects that start with "resource" (we don't need to archive
+# the condensed files or the preview images).
+regexp_object = ^resource/.*$
+
+# Only archive objects with a minimum size (2097152 is 2MiB)
+# On some archiving systems, files smaller than a certain size will not be
+# written to tape.
+object_size_min = 2097152
+
+# The archiving directory for this archiving job
+archive_path = /p/proj/MPLI/guck_division/DCOR/dcor-example
