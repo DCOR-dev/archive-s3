@@ -10,7 +10,8 @@ def download_resource(bucket_name, object_name, output_path, s3_client):
     if not path_backup.exists():
         # temporary file for downloading
         path_temp = path_backup.with_name("temp_" + path_backup.name + "~")
-        path_temp.unlink(missing_ok=True)
+        if path_temp.exists():
+            path_temp.unlink()
         path_temp.parent.mkdir(parents=True, exist_ok=True)
         # perform download
         s3_client.download_file(bucket_name, object_name, str(path_temp))
