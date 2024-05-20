@@ -61,7 +61,7 @@ def get_lock():
 
     # Register lock file
     lock_file.touch()
-    atexit.register(lock_file.unlink, missing_ok=True)
+    atexit.register(unlink_file_missing_ok, lock_file)
     return True
 
 
@@ -147,6 +147,11 @@ def run_archive(pc):
     Total archive size: {size_total/1024**3:.0f} GiB
     Added to the archive: {size_archived/1024**3:.0f} GiB
     """)
+
+
+def unlink_file_missing_ok(path):
+    if path.exists():
+        path.unlink()
 
 
 if __name__ == "__main__":
