@@ -138,7 +138,7 @@ def run_archive(pc):
                 kwargs["ContinuationToken"] = resp.get(
                     "NextContinuationToken")
 
-    print(f"""Summary:
+    print(f"""\nSummary:
     Buckets archived: {num_buckets_archived}
     Buckets ignored: {num_buckets_ignored}
     Objects archived: {num_objects_archived}
