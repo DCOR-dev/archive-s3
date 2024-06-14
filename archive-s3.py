@@ -163,7 +163,7 @@ def run_archive(pc):
     num_buckets_archived = 0
     num_buckets_ignored = 0
     num_objects_archived = 0
-    num_objects_ignored_size = 0
+    num_objects_archived_small = 0
     num_objects_ignored_regexp = 0
     size_total = 0
     size_archived = 0
@@ -199,6 +199,7 @@ def run_archive(pc):
                     if object_size < int(config["object_size_min"]):
                         size_archived += bucket_box.add_object(
                             object_name=object_name)
+                        num_objects_archived_small += 1
                     else:
                         size_archived += download_resource(
                             bucket_name=bucket_name,
@@ -206,10 +207,10 @@ def run_archive(pc):
                             output_path=config["archive_path"],
                             s3_client=s3_client,
                         )
-                        num_objects_archived += 1
-                        print(f"Fetching: {num_objects_archived} files,"
-                              f" {size_archived / 1024 ** 3:.1f} GiB",
-                              end="\r")
+                    num_objects_archived += 1
+                    print(f"Fetched: {num_objects_archived} files, "
+                          f"{size_archived / 1024 ** 3:.1f} GiB",
+                          end="\r")
                 else:
                     num_objects_ignored_regexp += 1
 
@@ -225,9 +226,9 @@ def run_archive(pc):
     print(f"""\nSummary:
     Buckets archived: {num_buckets_archived}
     Buckets ignored: {num_buckets_ignored}
-    Objects archived: {num_objects_archived}
+    Objects archived total: {num_objects_archived}
+    Objects archived small: {num_objects_archived_small}
     Objects ignored due to regexp: {num_objects_ignored_regexp}
-    Objects ignored due to size: {num_objects_ignored_size}
     Total archive size: {size_total/1024**3:.0f} GiB
     Added to the archive: {size_archived/1024**3:.0f} GiB
     """)
