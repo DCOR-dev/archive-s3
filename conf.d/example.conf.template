@@ -17,9 +17,9 @@ regexp_bucket = ^circle-.*$
 # the condensed files or the preview images).
 regexp_object = ^resource/.*$
 
-# Only archive objects with a minimum size (2097152 is 2MiB)
-# On some archiving systems, files smaller than a certain size will not be
-# written to tape.
+# Objects with a size smaller than `object_size_min` (2097152 is 2MiB)
+# will be archived together as a zip archive. This is useful if your
+# archiving system does not support files smaller than a certain size.
 object_size_min = 2097152
 
 # The archiving directory for this archiving job

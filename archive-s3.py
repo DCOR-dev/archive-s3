@@ -1,10 +1,80 @@
 import atexit
 import pathlib
 import re
+import shutil
+import tempfile
 import time
+import warnings
+import zipfile
 
 import boto3
 import psutil
+
+
+class SmallObjectPacker:
+    def __init__(self, output_path, bucket_name, s3_client, min_file_size):
+        """Helper class for packing small objects into an uncompressed zip"""
+        self.path_arc = (
+                output_path / bucket_name / "small_objects" /
+                time.strftime(f"small_objects_{bucket_name}_%Y-%d-%m.zip"))
+        self.arc = zipfile.ZipFile(output_path,
+                                   mode="a",
+                                   # disable compression
+                                   compression=zipfile.ZIP_STORED,
+                                   allowZip64=True
+                                   )
+        self.bucket_name = bucket_name
+        self.s3_client = s3_client
+        self.min_file_size = min_file_size
+        self.tdir = pathlib.Path(tempfile.mkdtemp(prefix="archive_object"))
+        # get a list of all previously loaded files in this bucket
+        self.file_list = []
+        for pp in self.path_arc.parent.glob("small_objects_*.txt"):
+            lines = pp.read_text().split("\n")
+            self.file_list += [ll.strip() for ll in lines if ll.strip()]
+
+    def add_object(self, object_name):
+        # Check whether the object is already in an archive
+        zip_name = f"{self.bucket_name}/{object_name}"
+        if zip_name in self.file_list:
+            # We already archived this file before
+            retval = 0
+        else:
+            try:
+                # make sure the file is really not already in the zip file
+                self.arc.getinfo(zip_name)
+            except KeyError:
+                # Not in archive -> download
+                retval = download_resource(
+                    bucket_name=self.bucket_name,
+                    object_name=object_name,
+                    output_path=self.tdir,
+                    s3_client=self.s3_client,
+                   )
+                object_path = self.tdir / self.bucket_name / object_name
+                self.arc.write(object_path, zip_name)
+                object_path.unlink()
+            else:
+                retval = 0
+        return retval
+
+    def close(self):
+        # Write a list of files added to the archive
+        path_txt = self.path_arc.with_suffix(".txt")
+        path_txt.write_text("\n".join(self.arc.namelist()))
+
+        # Make sure the file size is larger than self.min_file_size
+        # by writing a file of size self.min_file_size.
+        dummy_file = self.tdir / "dummy"
+        dummy_file.write_bytes(b"0"*self.min_file_size)
+        self.arc.write(dummy_file, "dummy.img")
+        self.arc.close()
+        if self.path_arc.stat().st_size < self.min_file_size:
+            warnings.warn(f"The file {self.path_arc} is smaller than the "
+                          f"minimum file size {self.min_file_size}. This "
+                          f"should not have happened!")
+        # cleanup
+        shutil.rmtree(self.tdir, ignore_errors=True)
 
 
 def download_resource(bucket_name, object_name, output_path, s3_client):
@@ -19,9 +89,10 @@ def download_resource(bucket_name, object_name, output_path, s3_client):
         # perform download
         s3_client.download_file(bucket_name, object_name, str(path_temp))
         path_temp.rename(path_backup)
-        return path_backup.stat().st_size
+        retval = path_backup.stat().st_size
     else:
-        return 0
+        retval = 0
+    return retval
 
 
 def get_config(path):
@@ -104,6 +175,13 @@ def run_archive(pc):
         else:
             num_buckets_ignored += 1
 
+        bucket_box = SmallObjectPacker(
+            output_path=config["archive_path"],
+            bucket_name=bucket_name,
+            s3_client=s3_client,
+            min_file_size=config["object_size_min"]
+        )
+
         kwargs = {"Bucket": bucket_name,
                   "MaxKeys": 500
                   }
@@ -117,7 +195,8 @@ def run_archive(pc):
                 if re_object.match(object_name):
                     size_total += object_size
                     if object_size < int(config["object_size_min"]):
-                        num_objects_ignored_size += 1
+                        size_archived += bucket_box.add_object(
+                            object_name=object_name)
                     else:
                         size_archived += download_resource(
                             bucket_name=bucket_name,
@@ -126,7 +205,7 @@ def run_archive(pc):
                             s3_client=s3_client,
                         )
                         num_objects_archived += 1
-                        print(f"Archiving: {num_objects_archived} files,"
+                        print(f"Fetching: {num_objects_archived} files,"
                               f" {size_archived / 1024 ** 3:.1f} GiB",
                               end="\r")
                 else:
@@ -137,6 +216,9 @@ def run_archive(pc):
             else:
                 kwargs["ContinuationToken"] = resp.get(
                     "NextContinuationToken")
+
+        # Make sure small files from this bucket are archived as well
+        bucket_box.close()
 
     print(f"""\nSummary:
     Buckets archived: {num_buckets_archived}
