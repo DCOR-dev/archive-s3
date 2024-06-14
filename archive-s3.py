@@ -166,6 +166,7 @@ def get_s3_client(config):
 
 def run_archive(pc):
     config = get_config(pc)
+    config["min_file_size"] = int(config["min_file_size"])
     print("Archiving ", config["name"])
     s3_client = get_s3_client(config)
     re_bucket = re.compile(config["regexp_bucket"])
@@ -206,7 +207,7 @@ def run_archive(pc):
 
                 if re_object.match(object_name):
                     size_total += object_size
-                    if object_size < int(config["object_size_min"]):
+                    if object_size < config["object_size_min"]:
                         size_archived += bucket_box.add_object(
                             object_name=object_name)
                         num_objects_archived_small += 1

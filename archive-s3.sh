@@ -5,7 +5,7 @@
 #
 # Or, if you can send emails, do this:
 #
-#   0 */6 * * * ~/repos/archive-s3/archive-s3.sh 2> >(/usr/bin/mail -s "S3 archive errors" recipient@example.com)
+#   0 */6 * * * ~/repos/archive-s3/archive-s3.sh > /dev/null 2> (/usr/bin/mail -s "S3 archive errors" recipient@example.com)
 #
 set -e
 set -x
