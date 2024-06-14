@@ -19,7 +19,7 @@ class SmallObjectPacker:
                 output_path / bucket_name / "small_objects" /
                 time.strftime(f"small_objects_{bucket_name}_%Y-%d-%m.zip"))
         self.path_arc.parent.mkdir(parents=True, exist_ok=True)
-        self.arc = zipfile.ZipFile(output_path,
+        self.arc = zipfile.ZipFile(self.path_arc,
                                    mode="a",
                                    # disable compression
                                    compression=zipfile.ZIP_STORED,
