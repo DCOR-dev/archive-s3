@@ -10,5 +10,5 @@
 set -e
 set -x
 
-source source ~/env_archive_s3/bin/activate
+source ~/env_archive_s3/bin/activate
 python ~/repos/archive-s3/archive-s3.py
