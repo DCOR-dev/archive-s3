@@ -61,20 +61,30 @@ class SmallObjectPacker:
         return retval
 
     def close(self):
-        # Write a list of files added to the archive
-        path_txt = self.path_arc.with_suffix(".txt")
-        path_txt.write_text("\n".join(self.arc.namelist()))
+        # get list of items
+        files = self.arc.namelist()
+        if files:
+            # Write a list of files added to the archive
+            path_txt = self.path_arc.with_suffix(".txt")
+            path_txt.write_text("\n".join(self.arc.namelist()))
 
-        # Make sure the file size is larger than self.min_file_size
-        # by writing a file of size self.min_file_size.
-        dummy_file = self.tdir / "dummy"
-        dummy_file.write_bytes(b"0"*self.min_file_size)
-        self.arc.write(dummy_file, "dummy.img")
-        self.arc.close()
-        if self.path_arc.stat().st_size < self.min_file_size:
-            warnings.warn(f"The file {self.path_arc} is smaller than the "
-                          f"minimum file size {self.min_file_size}. This "
-                          f"should not have happened!")
+            if self.path_arc.stat().st_size < self.min_file_size:
+                # Make sure the file size is larger than self.min_file_size
+                # by writing a file of size self.min_file_size.
+                dummy_file = self.tdir / "dummy"
+                dummy_file.write_bytes(b"0"*self.min_file_size)
+                self.arc.write(dummy_file, "dummy.img")
+
+            self.arc.close()
+
+            if self.path_arc.stat().st_size < self.min_file_size:
+                warnings.warn(f"The file {self.path_arc} is smaller than the "
+                              f"minimum file size {self.min_file_size}. This "
+                              f"should not have happened!")
+        else:
+            # delete archive that does not have any content
+            self.arc.close()
+            self.path_arc.unlink()
         # cleanup
         shutil.rmtree(self.tdir, ignore_errors=True)
 
