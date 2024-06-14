@@ -166,7 +166,7 @@ def get_s3_client(config):
 
 def run_archive(pc):
     config = get_config(pc)
-    config["min_file_size"] = int(config["min_file_size"])
+    config["object_size_min"] = int(config["object_size_min"])
     print("Archiving ", config["name"])
     s3_client = get_s3_client(config)
     re_bucket = re.compile(config["regexp_bucket"])
