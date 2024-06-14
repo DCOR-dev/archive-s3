@@ -14,6 +14,7 @@ import psutil
 class SmallObjectPacker:
     def __init__(self, output_path, bucket_name, s3_client, min_file_size):
         """Helper class for packing small objects into an uncompressed zip"""
+        output_path = pathlib.Path(output_path)
         self.path_arc = (
                 output_path / bucket_name / "small_objects" /
                 time.strftime(f"small_objects_{bucket_name}_%Y-%d-%m.zip"))
