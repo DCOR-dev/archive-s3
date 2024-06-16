@@ -29,6 +29,7 @@ class SmallObjectPacker:
         self.s3_client = s3_client
         self.min_file_size = min_file_size
         self.tdir = pathlib.Path(tempfile.mkdtemp(prefix="archive_object"))
+        atexit.register(shutil.rmtree, self.tdir, ignore_errors=True)
         # get a list of all previously loaded files in this bucket
         self.file_list = []
         for pp in self.path_arc.parent.glob("small_objects_*.txt"):
