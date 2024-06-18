@@ -19,6 +19,7 @@ if [ $retVal -ne 0 ] && [ -n "$ARCHIVE_MAIL" ]; then
     # if errors occurred and mail address is specified, send email
     /usr/bin/mail -s "S3 archive errors" "$ARCHIVE_MAIL" < "$LOGFILE"
 elif [ "$1" = "report" ]; then
+    # if a report is requested, send it
     /usr/bin/mail -s "S3 archive report" "$ARCHIVE_MAIL" < "$LOGFILE"
 fi
 
