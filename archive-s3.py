@@ -12,6 +12,10 @@ import boto3
 import psutil
 
 
+class ReachingQuotaLimitError(BaseException):
+    """used when reaching the quota limit"""
+
+
 class SmallObjectPacker:
     def __init__(self, output_path, bucket_name, s3_client, min_file_size):
         """Helper class for packing small objects into an uncompressed zip"""
@@ -169,6 +173,7 @@ def get_s3_client(config):
 def run_archive(pc, verbose=True):
     config = get_config(pc)
     config["object_size_min"] = int(config["object_size_min"])
+    config["s3_quota"] = int(config["s3_quota"])
     print("Archiving ", config["name"])
     s3_client = get_s3_client(config)
     re_bucket = re.compile(config["regexp_bucket"])
@@ -237,15 +242,23 @@ def run_archive(pc, verbose=True):
         # Make sure small files from this bucket are archived as well
         bucket_box.close()
 
+    quota_percent = size_total / config["s3_quota"]
+
     print(f"""\nSummary:
     Buckets archived: {num_buckets_archived}
     Buckets ignored: {num_buckets_ignored}
     Objects archived total: {num_objects_archived}
     Objects archived small: {num_objects_archived_small}
     Objects ignored due to regexp: {num_objects_ignored_regexp}
-    Total archive size: {size_total/1024**3:.0f} GiB
+    Total archive size: {size_total/1024**3:.0f} GiB ({quota_percent:.0%})
     Added to the archive: {size_archived/1024**3:.0f} GiB
     """)
+
+    ret_dict = {
+        "name": config["name"],
+        "s3_quota_used": quota_percent,
+    }
+    return ret_dict
 
 
 def unlink_file_missing_ok(path):
@@ -255,7 +268,17 @@ def unlink_file_missing_ok(path):
 
 if __name__ == "__main__":
     if get_lock():
+        quota_issues = []
         # get configuration files
         here = pathlib.Path(__file__).parent
         for pc in (here / "conf.d").glob("*.conf"):
-            run_archive(pc, verbose="report" not in sys.argv)
+            rd = run_archive(pc, verbose="report" not in sys.argv)
+            if rd["s3_quota_used"] > 0.95:
+                quota_issues.append(rd["name"])
+
+        if quota_issues:
+            raise ReachingQuotaLimitError(
+                f"Getting close to the quota limit for {quota_issues}! "
+                f"Please check the current quota limits in the configuration "
+                f"file and/or request a higher quota limit."
+                )

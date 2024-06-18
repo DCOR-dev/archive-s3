@@ -11,6 +11,9 @@ s3_endpoint_url = https://objectstore.hpccloud.mpcdf.mpg.de
 s3_access_key_id = dn1938dao9sw8dzpkl1902d8j1p9028ed12e
 s3_secret_access_key = asibksudzbqiwudzgi26di1726dgi76gvka78u6d
 
+# S3 quota given to you by the administrator (e.g. 10TB)
+s3_quota = 10000000000000
+
 # Regular expression describing which objects should be backed up
 regexp_bucket = ^circle-.*$
 # only archive objects that start with "resource" (we don't need to archive
