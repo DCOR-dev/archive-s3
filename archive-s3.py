@@ -2,6 +2,7 @@ import atexit
 import pathlib
 import re
 import shutil
+import sys
 import tempfile
 import time
 import warnings
@@ -165,7 +166,7 @@ def get_s3_client(config):
     return s3_client
 
 
-def run_archive(pc):
+def run_archive(pc, verbose=True):
     config = get_config(pc)
     config["object_size_min"] = int(config["object_size_min"])
     print("Archiving ", config["name"])
@@ -220,9 +221,10 @@ def run_archive(pc):
                             s3_client=s3_client,
                         )
                     num_objects_archived += 1
-                    print(f"Fetched: {num_objects_archived} files, "
-                          f"{size_archived / 1024 ** 3:.1f} GiB",
-                          end="\r")
+                    if verbose:
+                        print(f"Fetched: {num_objects_archived} files, "
+                              f"{size_archived / 1024 ** 3:.1f} GiB",
+                              end="\r")
                 else:
                     num_objects_ignored_regexp += 1
 
@@ -256,4 +258,4 @@ if __name__ == "__main__":
         # get configuration files
         here = pathlib.Path(__file__).parent
         for pc in (here / "conf.d").glob("*.conf"):
-            run_archive(pc)
+            run_archive(pc, verbose="report" not in sys.argv)

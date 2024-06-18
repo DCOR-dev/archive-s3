@@ -11,14 +11,17 @@ LOGFILE=$(mktemp)
 
 # run the python script
 source ~/env_archive_s3/bin/activate
-python ~/repos/archive-s3/archive-s3.py > "$LOGFILE" 2>&1
+python ~/repos/archive-s3/archive-s3.py "$1" >> "$LOGFILE" 2>&1
 
 # check for errors
 retVal=$?
-if [ $retVal -ne 0 ] && [ -n "$ARCHIVE_MAIL" ] || [ "$1" = "report" ]; then
+if [ $retVal -ne 0 ] && [ -n "$ARCHIVE_MAIL" ]; then
     # if errors occurred and mail address is specified, send email
     /usr/bin/mail -s "S3 archive errors" "$ARCHIVE_MAIL" < "$LOGFILE"
+elif [ "$1" = "report" ]; then
+    /usr/bin/mail -s "S3 archive report" "$ARCHIVE_MAIL" < "$LOGFILE"
 fi
+
 
 # cleanup
 rm -f "$LOGFILE"
