@@ -255,11 +255,11 @@ def run_archive(pc, verbose=True):
                 kwargs["ContinuationToken"] = resp.get(
                     "NextContinuationToken")
 
-        print(f"Fetched: {num_objects_archived} files, "
-              f"{size_archived / 1024 ** 3:.1f} GiB")
-
         # Make sure small files from this bucket are archived as well
         bucket_box.close()
+
+    print(f"Fetched: {num_objects_archived} files, "
+          f"{size_archived / 1024 ** 3:.1f} GiB")
 
     quota_percent = size_total / config["s3_quota"]
 
