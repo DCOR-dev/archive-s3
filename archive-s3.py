@@ -246,7 +246,7 @@ def run_archive(pc, verbose=True):
                 else:
                     num_objects_ignored_regexp += 1
 
-                if verbose and time.monotonic() - t0 > 30:
+                if verbose and time.monotonic() - t0 > 10:
                     t0 = time.monotonic()
                     print(f"Fetched: {num_objects_archived} files, "
                           f"{size_archived / 1024 ** 3:.1f} GiB",
