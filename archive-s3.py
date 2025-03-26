@@ -7,6 +7,7 @@ Copyright 2024 Paul Müller
 Changes
 -------
 1.0.2 (2025-03-26)
+ - fix: properly ignore unmatching buckets
  - reg: use time-based print instead
 1.0.1 (2025-03-26)
  - enh: reduce verbosity (print update only every 100th file)
@@ -209,6 +210,7 @@ def run_archive(pc, verbose=True):
             num_buckets_archived += 1
         else:
             num_buckets_ignored += 1
+            continue
 
         bucket_box = SmallObjectPacker(
             output_path=config["archive_path"],
@@ -259,8 +261,9 @@ def run_archive(pc, verbose=True):
         # Make sure small files from this bucket are archived as well
         bucket_box.close()
 
-    print(f"Fetched: {num_objects_archived} files, "
-          f"{size_archived / 1024 ** 3:.1f} GiB")
+    if verbose:
+        print(f"Fetched: {num_objects_archived} files, "
+              f"{size_archived / 1024 ** 3:.1f} GiB")
 
     quota_percent = size_total / config["s3_quota"]
 
