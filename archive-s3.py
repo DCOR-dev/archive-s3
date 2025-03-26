@@ -226,12 +226,15 @@ def run_archive(pc, verbose=True):
                             s3_client=s3_client,
                         )
                     num_objects_archived += 1
-                    if verbose:
+                    if verbose and num_objects_archived % 100 == 0:
                         print(f"Fetched: {num_objects_archived} files, "
                               f"{size_archived / 1024 ** 3:.1f} GiB",
                               end="\r")
                 else:
                     num_objects_ignored_regexp += 1
+
+            print(f"Fetched: {num_objects_archived} files, "
+                  f"{size_archived / 1024 ** 3:.1f} GiB")
 
             if not resp.get("IsTruncated"):
                 break
