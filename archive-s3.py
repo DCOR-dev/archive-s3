@@ -6,8 +6,10 @@ Copyright 2024 Paul Müller
 
 Changes
 -------
+1.0.2 (2025-03-26)
+ - reg: use time-based print instead
 1.0.1 (2025-03-26)
- - reduce verbosity (print update only every 100th file)
+ - enh: reduce verbosity (print update only every 100th file)
 """
 
 import atexit
@@ -197,6 +199,7 @@ def run_archive(pc, verbose=True):
     num_objects_ignored_regexp = 0
     size_total = 0
     size_archived = 0
+    t0 = time.monotonic()
 
     # fetch a list of buckets
     buckets = [b["Name"] for b in s3_client.list_buckets()["Buckets"]]
@@ -238,21 +241,22 @@ def run_archive(pc, verbose=True):
                             s3_client=s3_client,
                         )
                     num_objects_archived += 1
-                    if verbose and num_objects_archived % 100 == 0:
+                    if verbose and time.monotonic() - t0 > 30:
+                        t0 = time.monotonic()
                         print(f"Fetched: {num_objects_archived} files, "
                               f"{size_archived / 1024 ** 3:.1f} GiB",
                               end="\r")
                 else:
                     num_objects_ignored_regexp += 1
 
-            print(f"Fetched: {num_objects_archived} files, "
-                  f"{size_archived / 1024 ** 3:.1f} GiB")
-
             if not resp.get("IsTruncated"):
                 break
             else:
                 kwargs["ContinuationToken"] = resp.get(
                     "NextContinuationToken")
+
+        print(f"Fetched: {num_objects_archived} files, "
+              f"{size_archived / 1024 ** 3:.1f} GiB")
 
         # Make sure small files from this bucket are archived as well
         bucket_box.close()
