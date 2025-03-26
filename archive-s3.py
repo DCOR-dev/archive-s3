@@ -1,3 +1,15 @@
+"""Archiving S3 data
+
+MIT License
+
+Copyright 2024 Paul Müller
+
+Changes
+-------
+1.0.1 (2025-03-26)
+ - reduce verbosity (print update only every 100th file)
+"""
+
 import atexit
 import pathlib
 import re
